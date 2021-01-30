@@ -1,35 +1,40 @@
-# kubectl-role
+# ansible-kubectl
 
-This repository can be used to install kubectl on Virtual machine from Ansible-Galaxy Role **andrewrothstein.kubectl** .
+Ansible playbook for installing kubectl on Virtual machine from Ansible-Galaxy Role **andrewrothstein.kubectl** .
 
-These playbooks are intended to be a reference and starter's guide to building Ansible Playbooks for use with IBM Cloud and Schematics. These playbooks were tested on CentOS 7.x so we recommend that you use CentOS or RHEL to test these modules. In this deployment we install a kubectl on Vortual Machine.
+These playbooks are intended to be a reference and starter's guide to building Ansible Playbooks for use with IBM Cloud and Schematics. These playbooks were tested on CentOS 7.x so we recommend that you use CentOS or RHEL to test these modules.
 
-Schematics Actions uses SSH to configure target VSIs on IBM Cloud. To ensure that all access to the target VSIs is secured it is assumed that SSH access is configured via a bastion host/jump server om IBM Cloud. This [IBM Cloud Automation repo](https://github.com/Cloud-Schematics) contains a number of example Terraform configs that deploy a VPC Gen 2 environment with bastion host access.
+Schematics Actions uses SSH to configure target VSI's on IBM Cloud. To ensure that all access to the target VSI's is secured it is assumed that SSH access is configured via a bastion host/jump server om IBM Cloud. This [IBM Cloud Automation repo](https://github.com/Cloud-Schematics) contains a number of example Terraform configs that deploy a VPC Gen 2 environment with bastion host access.
 
-This playbook has been run and tested using VSIs in a VPC Gen2 environment, deployed using the IBM Cloud Multitier VPC Bastion LAMP example. To provision Multitier VPC Bastion LAMP on IBM cloud follow the steps [here](https://github.com/Cloud-Schematics/multitier-bastion-vpc-lamp)
+This playbook has been run and tested using VSI's in a VPC Gen2 environment, deployed using the IBM Cloud Multitier VPC Bastion LAMP example. To provision Multitier VPC Bastion LAMP on IBM cloud follow the steps [here](https://github.com/Cloud-Schematics/multitier-bastion-vpc-lamp)
 
-## Prerequisites :
+You can create a Schematics Action, using these playbooks; and allow your team members to perform these Actions in a controller manner.
+Follow the instruction to onboard these Ansible playbooks as Schematics Action, and run them as Schematics Jobs.
 
+## Prerequisites:
    - Ansible 1.2.9
    - [Multitier VPC Bastion LAMP](https://github.com/Cloud-Schematics/multitier-bastion-vpc-lamp)
    - SSH Key on IBM Cloud
 
-## Running the playbook locally
+## Inputs:
+  - bastion floating IP address
+  - IBM Cloud VSI IP address
+  - IBM Cloud SSH Private key used for VSI installation
+
+## Run the ansible playbook using Ansible Playbook command
  To run this example locally, create a hosts file in the root of the example folder and update it with the {target-host-ip}, {jump-server-ip} and respective ssh keys. Details of how to configure the host file manually can be found in the [Ansible documentation](https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html#inventory-basics-formats-hosts-and-groups). 
  The kubectl can be installed using the following 
 - commands:
     - ansible-galaxy role install roles/requirements.yml -p roles
-    - ansible-playbook kubectlplaybook.yml -i hosts
+    - ansible-playbook kubectl.yml -i hosts
 
-## Running on IBM Cloud Schematics
+## Run the ansible playbook using Schematics API    
 
-IBM Cloud Schematics supports running Ansible playbooks natively. You can try the same example through various entry points. 
+- Create a Schematics action: "kubectl-role"
+   Use the `POST {url}/v2/actions` with the following payload:
+   Url: https://schematics.cloud.ibm.com
 
-### Running Actions using the IBM Cloud Schematics API
-
-1. Create a file containing the Schematics Action payload. The Action payload is a json object. Start with `{}` and add the required fields. 
-
-    - Add basic information for action like `name`, `description`, the Schematics `location` you want the Action to be placed in, `resource_group` and tag for identification. Ensure that the Action `name` is unique.  
+   Pass header: Authorization: {bearer token}
 
     ```
     "name": "Example-1",
@@ -40,23 +45,22 @@ IBM Cloud Schematics supports running Ansible playbooks natively. You can try th
       "string"
     ]
     ```
-
-    - Add the source repo for importing the Ansible playbooks. 
+  - Add the source repo for importing the Ansible playbooks. 
     ```
     "source_type": "GitHub", 
     "source": {
          "source_type" : "git",
          "git" : {
-              "git_repo_url": "https://github.com/areddy548/kubectl-role"
+              "git_repo_url": "https://github.com/Cloud-Schematics/ansible-kubectl
          }
     }
     ```
     - Add the playbook which should run by default when `run` is triggered. Any playbook from the source repo can be selected. 
     ```
-    "command_parameter": "kubectlplaybook.yml"
+    "command_parameter": "kubectl.yml"
     ```
 
-    - Add the Credentials required o run the configuration. For deploying code to VSI's these will be the SSH private keys for the bastion host and target VSIs. All credentials should be added as `name` and `value` and will be referred in the target section with the same name.
+    - Add the Credentials required o run the configuration. For deploying code to VSI's these will be the SSH private keys for the bastion host and target VSI's. All credentials should be added as `name` and `value` and will be referred in the target section with the same name.
     ```
     "credentials": [
       {
@@ -72,7 +76,7 @@ IBM Cloud Schematics supports running Ansible playbooks natively. You can try th
     ```
     - Add Bastion host information. Refer to the credentials provided in the above step in `cred_ref`.
     ```
-    "bastion_ref": {
+    "bastion": {
       "name": "bastionhost",
       "type": "string",
       "description": "string",
@@ -80,71 +84,37 @@ IBM Cloud Schematics supports running Ansible playbooks natively. You can try th
       "credential_ref": "ssh_key"
     }
     ```
-    - Add inventory information. Refer the credentials provided in above step in `cred_ref`. Multiple groups with multiple host can be provided.The following inventory file 
+    - Add inventory information. 
     ```
-    [webserverhost]
+    "targets_ini": "[webserverhost]
     FIRST_WEB_SERVER_IP_ADDRESS
-    SECOND_WEB_SERVER_IP_ADDRESS
-    ```
-    can be represented as 
-    ```
-    "targets_ref": [
-      {
-        "name": "webserverhost",
-        "description": "Group of webservers",
-        "credential_ref": "ssh_key",
-        "bastion_ref": "bastionhost",
-        "target_resources": [
-          {
-            "resource_id": "< FIRST_WEB_SERVER_IP_ADDRESS >"
-          },
-           {
-            "resource_id": "< SECOND_WEB_SERVER_IP_ADDRESS >"
-          }
-        ]
-      }
-    ]
+    SECOND_WEB_SERVER_IP_ADDRESS"
+    
     ```
 
-2. Create action by making a http request.
-    - Headers: 
-    Authorization : < Bearer ...>
-    - Method: POST
-    - ENDPOINT: `https://schematics.cloud.ibm.com/v2/actions`
+- Create & run the Schematics Job for "kubectl-role"
 
-
-3. Note the `ID` from step 1 and check the status of action by making http request. 
-    - Headers: 
-    Authorization : < Bearer ...>
-    - Method: GET
-    - ENDPOINT: `https://schematics.cloud.ibm.com/v2/actions/<ID>`
-
-4. Verify if the action is in `normal` state. 
-    ```
-    "state": {  
-        "status_code": "normal",
-        "status_message": "Action is normal and ready for execution"
-    }
-    ```
-5. Create Job with a http request. Modify the payload with the `ID` received in step 1. 
-    - Headers: 
-    Authorization : < Bearer ...>
-    - Method: GET
-    - ENDPOINT: `https://schematics.cloud.ibm.com/v2/jobs`
-
+  Use the `POST {url}/v2/jobs` with the following payload:
+  Url: https://schematics.cloud.ibm.com
+  
+  Pass header: Authorization: {bearer token}
+ 
     ```
     {
-        "command_object": "action",
-        "command_object_id": "< ACTION_ID >",
-        "command_name": "ansible_playbook_run"
+      "command_object": "action",
+      "command_object_id": {action-id from the response of above request},
+      "command_name": "ansible_playbook_run",
+      "command_parameter": "kubectl.yml"
     }
     ```
 
-6. Check logs with a http request. Use the `ID` from step 4. 
-    - Headers: 
-    Authorization : < Bearer ...>
-    - Method: GET
-    - ENDPOINT: `https://schematics.cloud.ibm.com/v2/jobs/<JOB-ID>/logs`
+- Check the Schematics Job status and the ansible logs:
+
+  Use the `GET {url}/v2/jobs/{job-id}/logs`. 
+  Url: https://schematics.cloud.ibm.com
+  
+  Pass header: Authorization: {bearer token}
+
 
 ## Outputs
 
@@ -152,23 +122,24 @@ Check the job logs for of TASK: `Display Index page content`. The content should
 
 ### Running Actions using the IBM Cloud Schematics UI
 
-1. Create an Action by Providing *name*, *description*, *location* and *resource_group* from IBM Cloud Schematics.
-
-2. Provide the Repo deatils in this case it is [repo](https://github.com/areddy548/kubectl-role) under **Ansible Playbook** Tab, if it is Private repo provide github token as **Personal access token**. Wait untill Action come to **Normal** state
-
-3. Enter the VSI and bastion host details in **IBM Cloud Resource Invetory** Tab.
-
-   ## Variables
-
-      | Variable Name | Description |	Default Value |
-      | ----- | ----- | ----- |
-      | Bastion host IP | bastion floating IP address | |
-      | IBM Cloud inventory IP addresses| VSI IP address | |
-      | IBM Cloud resource inventory SSH key| SSH Private key used for VSI installation | |
-
-4. Wait for Action to come into **Normal** state and click on **Run Action** Button to run the playbook
-
-5. Check the logs by clicking on **Jobs** in side menu. Currently running job will be on top of the list, Once job come to **Run successful** status with out any error we can check results.
+- Open https://cloud.ibm.com/schematics/actions to view the list of Schematics Actions.
+- Click `Create action` button to create a new Schematics Action definition.
+- In the Create action page - section 1, provide the following inputs, to create a `kubectl-role` action in `Draft` state.
+  * Action name : kubectl-role
+  * Resource group: default
+  * Location : us-east
+- In the Create action page - section 2, provide the following input
+  * Github url : https://github.com/Cloud-Schematics/ansible-kubectl
+  * Click on `Retrieve playbooks` button
+  * Select `kubectl.yml` from the dropdown
+- In the Create action page - Advanced options, provide the following input
+  * Add `BASITION_HOST_IP_ADDRESS` as key and `<Bastion floating IP address>` as value
+  * Add `VSI_IP_ADDRESS` as key and `<VSI IP address>` as value
+  * Add `SSH_KEY` as key and `<SSH Private key>` as value
+- Press the `Next` button, and wait for the newly created `kubectl-role` action to move to `Normal` state.
+- Once the `kubectl-role` action is in `Normal` state, you can press the `Run action` button to initiate the Schematics Job
+  * You can view the job status and the job logs (or Ansible logs) in the Jobs page of the `kubectl-role` Schematics Action
+  * Jobs page of the `kubectl-role` Schematics Action will list all the historical jobs that was executed using this Action definition
 
 **Results** : 
 
@@ -177,4 +148,4 @@ Log into your VSI Instance by ssh to VSI using bastion, below is the command
 ssh -i <ssh_privatekey_path> -o ProxyCommand="ssh -i <ssh_privatekey_path> -W %h:%p root@<bastion_ip>" root@<vsi_ip>
 ```
 
-Check whether Kubectl is got installed or not.
+Check whether Kubectl is installed or not.
