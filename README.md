@@ -33,7 +33,7 @@ These playbooks are intended to be a reference and starter's guide to building A
 
  1. Create the Schematics action. Enter all the input variable values that you retrieved earlier. When you run this command and are prompted to enter a GitHub token, enter the return key to skip this prompt.
    ```
-   ibmcloud schematics action create --name kubectl --location us-south --resource-group default --template https://github.com/Cloud-Schematics/ansible-kubectl --playbook-name site.yml --input "mysql_port": "<mysql_port>" --input "httpd_port": "<httpd_port>" --input "dbuser": "<dbuser>" --input "upassword": "<db_password>"
+   ibmcloud schematics action create --name kubectl --location us-south --resource-group default --template https://github.com/Cloud-Schematics/ansible-kubectl --playbook-name site.yml
    ```
 
    Example output:
