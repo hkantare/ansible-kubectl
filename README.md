@@ -25,7 +25,7 @@ These playbooks are intended to be a reference and starter's guide to building A
 3. Select the `site.yml` playbook.
 4. Select the **Verbosity** level to control the depth of information that will be shown when you run the playbook in Schematics.
 5. Expand the **Advanced options**.
-6. Enter all required input variables as key-value pairs. Then, click **Next**.
+6. Enter all required input variables as key-value pairs. Then, click **Save**.
 7. Click **Check action** to verify your action details. The **Jobs** page opens automatically. You can view the results of this check by looking at the logs.
 8. Click **Run action** to deploy the kubectl. You can monitor the progress of this action by reviewing the logs on the **Jobs** page.
 
@@ -57,7 +57,7 @@ These playbooks are intended to be a reference and starter's guide to building A
 
 3. Create a job to run a check for your action. Replace `<action_ID>` with the action ID that you retrieved. In your CLI output, note the **ID** that was assigned to your job.
    ```
-   ibmcloud schematics job create --command-object action --command-object-id <action_ID> --command-name ansible_playbook_check
+   ibmcloud schematics job run --command-object action --command-object-id <action_ID> --command-name ansible_playbook_check
    ```
 
    Example output:
@@ -77,7 +77,7 @@ These playbooks are intended to be a reference and starter's guide to building A
 
 5. Create another job to run the action. Replace `<action_ID>` with your action ID.
    ```
-   ibmcloud schematics job create --command-object action --command-object-id <action_ID> --command-name ansible_playbook_run
+   ibmcloud schematics job run --command-object action --command-object-id <action_ID> --command-name ansible_playbook_run
    ```
 
 6. Verify that your job ran successfully by retrieving the logs.
